@@ -15,6 +15,14 @@ class GithubApi(private val client: OkHttpClient = OkHttpClient()) {
             .toRequestBody("application/json".toMediaType())
         val request = Request.Builder().url("https://api.github.com/repos/$owner/$repo/actions/workflows/gik.yml/dispatches")
             .header("Authorization", "Bearer $token").header("Accept", "application/vnd.github+json").header("X-GitHub-Api-Version", "2022-11-28").post(body).build()
-        client.newCall(request).execute().use { response -> if (!response.isSuccessful) throw IllegalStateException("GitHub HTTP ${response.code}") }
+        client.newCall(request).execute().use { response -> if (!response.isSuccessful) throw IllegalStateException(describe(response.code, owner, repo)) }
+    }
+
+    private fun describe(code: Int, owner: String, repo: String): String = when (code) {
+        401 -> "токен недействителен (401). Проверьте GitHub token."
+        403 -> "нет прав (403). Токену нужны Actions: Read and write для $owner/$repo."
+        404 -> "не найден workflow gik.yml в $owner/$repo (404). Добавьте .github/workflows/gik.yml в ветку main или проверьте имя репозитория и права токена."
+        422 -> "workflow найден, но отклонил запрос (422): нет ветки main или input task."
+        else -> "GitHub HTTP $code"
     }
 }
