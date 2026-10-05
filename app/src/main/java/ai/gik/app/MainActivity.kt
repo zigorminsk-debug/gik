@@ -34,6 +34,7 @@ class GikViewModel : ViewModel() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable fun GikApp() {
     val vm = remember { GikViewModel() }
     MaterialTheme(colorScheme = lightColorScheme(primary = androidx.compose.ui.graphics.Color(0xFF6750A4))) {
