@@ -23,14 +23,14 @@ jobs:
 
       - name: Install Android SDK packages
         run: |
-          set -euo pipefail
+          set -eu
           SDK_ROOT="$HOME/android-sdk"
           mkdir -p "$SDK_ROOT/cmdline-tools"
           curl -sSL -o /tmp/cmdline-tools.zip \
             https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip -q /tmp/cmdline-tools.zip -d "$SDK_ROOT/cmdline-tools"
           mv "$SDK_ROOT/cmdline-tools/cmdline-tools" "$SDK_ROOT/cmdline-tools/latest"
-          yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
             "platform-tools" "platforms;android-35" "build-tools;35.0.0" > /dev/null
           echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
