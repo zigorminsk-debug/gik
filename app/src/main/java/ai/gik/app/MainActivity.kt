@@ -19,15 +19,26 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); setContent { GikApp() } }
 }
 
+/** Принимает owner/repo, https://github.com/owner/repo(.git), git@github.com:owner/repo.git. */
+fun normalizeRepository(input: String): Pair<String, String>? {
+    var value = input.trim().removeSuffix("/")
+    value = value.removePrefix("https://").removePrefix("http://").removePrefix("git@")
+    value = value.removePrefix("www.").removePrefix("github.com/").removePrefix("github.com:")
+    value = value.removeSuffix(".git")
+    val parts = value.split("/", ":").filter { it.isNotBlank() }
+    if (parts.size < 2) return null
+    return parts[parts.size - 2] to parts[parts.size - 1]
+}
+
 class GikViewModel : ViewModel() {
     var token by mutableStateOf(""); var repository by mutableStateOf(""); var task by mutableStateOf("")
     var status by mutableStateOf("Готово к запуску"); var busy by mutableStateOf(false)
     private val api = GithubApi()
     fun run() { if (token.isBlank() || repository.isBlank() || task.isBlank()) { status = "Заполните все поля"; return }
-        val parts = repository.trim().removePrefix("https://github.com/").removeSuffix("/").split("/")
-        if (parts.size < 2) { status = "Укажите репозиторий в формате owner/repo"; return }
+        val parts = normalizeRepository(repository)
+        if (parts == null) { status = "Укажите репозиторий в формате owner/repo"; return }
         viewModelScope.launch { busy = true; status = "Отправляем задание в GitHub Actions…"
-            try { api.dispatch(token, parts[0], parts[1], task); status = "Сборка запущена. Откройте Actions в GitHub, чтобы следить за прогрессом." }
+            try { api.dispatch(token, parts.first, parts.second, task); status = "Сборка запущена. Откройте Actions в GitHub, чтобы следить за прогрессом." }
             catch (e: Exception) { status = "Ошибка: ${e.message ?: "проверьте токен и репозиторий"}" }
             finally { busy = false }
         }
